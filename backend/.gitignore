@@ -3,3 +3,4 @@ node_modules/
 samconfig.toml
 .env
 *.log
+polly-blog/
