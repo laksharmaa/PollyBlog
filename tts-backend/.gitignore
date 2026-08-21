@@ -1,8 +1,0 @@
-# layers
-layers/common/nodejs/node_modules
-# node_modules
-node_modules/
-# serverless files
-.serverless/
-# serverless
-serverless.yml
