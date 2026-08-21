@@ -16,11 +16,21 @@ async function fileExistsInS3(key) {
   }
 }
 
+async function streamToBuffer(stream) {
+  const chunks = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}
+
 async function uploadToS3(key, body) {
+  const buffer = Buffer.isBuffer(body) ? body : await streamToBuffer(body);
   return s3.send(new PutObjectCommand({
     Bucket: BUCKET,
     Key: key,
-    Body: body,
+    Body: buffer,
+    ContentLength: buffer.length,
     ContentType: 'audio/mpeg',
   }));
 }
