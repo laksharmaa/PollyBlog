@@ -1,0 +1,1 @@
+import EditorForm from "../components/editor/EditorForm";export default function CreateBlogPage(){return <section className="editor-page"><div className="editor-top"><div><p className="eyebrow">New story</p><h1>Write something worth hearing.</h1></div><a className="back-link" href="/">← Cancel</a></div><EditorForm/></section>}

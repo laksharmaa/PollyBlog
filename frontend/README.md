@@ -1,8 +1,50 @@
-# React + Vite
+# Narrate — organized frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The frontend is deliberately separated by responsibility:
 
-Currently, two official plugins are available:
+```text
+src/
+├── assets/
+├── components/
+│   ├── auth/
+│   ├── blog/
+│   ├── common/
+│   ├── editor/
+│   ├── layout/
+│   └── tts/
+├── hooks/
+├── pages/
+├── routes/
+├── services/
+├── styles/
+├── utils/
+├── App.jsx
+└── main.jsx
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- `pages/` contains route-level screens.
+- `components/` contains reusable UI grouped by feature.
+- `routes/` contains route definitions and protected-route logic.
+- `services/` is the only API layer.
+- `hooks/` contains application state hooks.
+- `utils/` contains pure helpers/storage wrappers.
+- `styles/` contains the global design system.
+
+Set the backend URL in `.env`:
+
+```env
+VITE_API_BASE_URL=https://YOUR-API-GATEWAY-URL
+```
+
+Verified API contract:
+
+- `POST /register`
+- `POST /login`
+- `GET /api/public-blogs`
+- `GET /api/public-blog/:blogId`
+- `POST /api/create-blog`
+- `GET /api/get-blogs`
+- `DELETE /api/delete-blog`
+- `POST /api/speech`
+
+Run with `npm install` then `npm run dev`.

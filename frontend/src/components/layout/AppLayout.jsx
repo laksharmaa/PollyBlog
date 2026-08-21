@@ -1,0 +1,1 @@
+import {Outlet} from "react-router-dom";import Header from "./Header";import Footer from "./Footer";export default function AppLayout(p){return <div className={p.dark?"app dark":"app"}><Header {...p}/><main><Outlet/></main><Footer/></div>}

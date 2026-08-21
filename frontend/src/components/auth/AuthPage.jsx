@@ -1,0 +1,2 @@
+import Logo from "../common/Logo";
+export default function AuthPage({eyebrow,title,subtitle,children}){return <section className="auth-page"><div className="auth-copy"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{subtitle}</p><div className="auth-quote">“The machine can read the words.<br/>Only you can give them meaning.”</div></div><div className="auth-card"><Logo/>{children}</div></section>}

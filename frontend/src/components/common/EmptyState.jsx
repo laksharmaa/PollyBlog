@@ -1,0 +1,1 @@
+export default function EmptyState({title,text,action}){return <div className="empty"><div className="empty-mark">N</div><h3>{title}</h3><p>{text}</p>{action&&<a className="button primary" href="/create-blog">{action} <span>→</span></a>}</div>}

@@ -1,0 +1,1 @@
+export default function AuthField({label,type="text",value,onChange,autoComplete}){return <label className="field"><span>{label}</span><input type={type} value={value} onChange={e=>onChange(e.target.value)} autoComplete={autoComplete} required/></label>}
