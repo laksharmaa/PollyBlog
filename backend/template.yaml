@@ -1,0 +1,368 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Blog platform backend (auth, blogs, text-to-speech) - migrated from
+  Serverless Framework to AWS SAM.
+
+Parameters:
+  Stage:
+    Type: String
+    Default: prod
+    AllowedValues: [dev, prod]
+  JwtSecret:
+    Type: String
+    NoEcho: true
+    Description: >
+      Secret used to sign/verify JWTs. Pass this at deploy time
+      (see samconfig.toml / --parameter-overrides). Never commit the real
+      value to git. Generate one with: openssl rand -base64 48
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    Architectures: [arm64]
+    Timeout: 10
+    MemorySize: 256
+    Environment:
+      Variables:
+        JWT_SECRET: !Ref JwtSecret
+        USERS_TABLE: !Ref UsersTable
+        BLOGS_TABLE: !Ref BlogsTable
+        SAVED_BLOGS_TABLE: !Ref SavedBlogsTable
+        S3_BUCKET_NAME: !Ref AudioBucket
+
+Resources:
+  # ---------------------------------------------------------------------
+  # API
+  # ---------------------------------------------------------------------
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: !Ref Stage
+      CorsConfiguration:
+        AllowOrigins: ["*"]   # tighten to your frontend's domain before going to real prod
+        AllowMethods: [GET, POST, DELETE, OPTIONS]
+        AllowHeaders: [Content-Type, Authorization]
+
+  # ---------------------------------------------------------------------
+  # Auth
+  # ---------------------------------------------------------------------
+  RegisterFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/auth/register.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth/register.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /register
+            Method: POST
+
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/auth/login.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth/login.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /login
+            Method: POST
+
+  # ---------------------------------------------------------------------
+  # Blogs
+  # ---------------------------------------------------------------------
+  CreateBlogFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/blog/create.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/blog/create.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BlogsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/create-blog
+            Method: POST
+
+  SaveBlogFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/blog/save.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/blog/save.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SavedBlogsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/save-blog
+            Method: POST
+
+  ListBlogsFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/blog/list.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/blog/list.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SavedBlogsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/get-blogs
+            Method: GET
+
+  GetBlogFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/blog/get.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/blog/get.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SavedBlogsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/get-blog/{blogId}
+            Method: GET
+
+  DeleteBlogFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/blog/delete.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/blog/delete.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SavedBlogsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/delete-blog
+            Method: DELETE
+
+  ListPublicBlogsFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/blog/listPublic.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/blog/listPublic.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref BlogsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/public-blogs
+            Method: GET
+
+  GetPublicBlogFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/blog/getPublic.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/blog/getPublic.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref BlogsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/public-blog/{blogId}
+            Method: GET
+
+  # ---------------------------------------------------------------------
+  # Speech (Polly + S3)
+  # ---------------------------------------------------------------------
+  SpeechFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/speech/synthesize.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/speech/synthesize.handler
+      Timeout: 30
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: polly:SynthesizeSpeech
+              Resource: "*"
+        - S3CrudPolicy:
+            BucketName: !Ref AudioBucket
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/speech
+            Method: POST
+
+  # ---------------------------------------------------------------------
+  # Data stores (now real infrastructure-as-code, not click-ops)
+  # ---------------------------------------------------------------------
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-Users"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: username
+          AttributeType: S
+      KeySchema:
+        - AttributeName: username
+          KeyType: HASH
+
+  # Public/community blogs. PK+SK lets a user have many blogs; the two GSIs
+  # support "all public blogs" and "look up one blog by id regardless of
+  # owner", matching how the handlers query it.
+  BlogsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-Blogs"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: username
+          AttributeType: S
+        - AttributeName: blogId
+          AttributeType: S
+        - AttributeName: isPublic
+          AttributeType: S
+      KeySchema:
+        - AttributeName: username
+          KeyType: HASH
+        - AttributeName: blogId
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: isPublic-index
+          KeySchema:
+            - AttributeName: isPublic
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: blogId-index
+          KeySchema:
+            - AttributeName: blogId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  # Private saved drafts, one per user+blogId.
+  SavedBlogsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-SavedBlogs"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: username
+          AttributeType: S
+        - AttributeName: blogId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: username
+          KeyType: HASH
+        - AttributeName: blogId
+          KeyType: RANGE
+
+  AudioBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-audiofiles-${AWS::AccountId}"
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireGeneratedAudio
+            Status: Enabled
+            ExpirationInDays: 30   # cached TTS mp3s regenerate cheaply; no need to keep forever
+
+Outputs:
+  ApiUrl:
+    Description: Base URL for the HTTP API
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}"
+  UsersTableName:
+    Value: !Ref UsersTable
+  BlogsTableName:
+    Value: !Ref BlogsTable
+  SavedBlogsTableName:
+    Value: !Ref SavedBlogsTable
+  AudioBucketName:
+    Value: !Ref AudioBucket

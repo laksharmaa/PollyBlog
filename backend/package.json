@@ -1,0 +1,27 @@
+{
+  "name": "blog-platform-backend",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Auth, blog, and text-to-speech backend, deployed with AWS SAM.",
+  "scripts": {
+    "build": "sam build",
+    "deploy": "sam deploy",
+    "deploy:guided": "sam deploy --guided",
+    "local": "sam local start-api",
+    "migrate": "bash scripts/migrate-all.sh",
+    "logs:register": "sam logs -n RegisterFunction --stack-name blog-platform-backend --tail"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.700.0",
+    "@aws-sdk/lib-dynamodb": "^3.700.0",
+    "@aws-sdk/client-s3": "^3.700.0",
+    "@aws-sdk/s3-request-presigner": "^3.700.0",
+    "@aws-sdk/client-polly": "^3.700.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}
