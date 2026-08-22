@@ -88,20 +88,13 @@ button {
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-weight: 700;
-  letter-spacing: -.04em;
-  font-size: 21px
+  height: 42px
 }
 
-.brand-mark {
-  width: 30px;
-  height: 30px;
-  border: 1.5px solid currentColor;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font: 600 14px "DM Mono"
+.brand-logo {
+  display: block;
+  width: 142px;
+  height: auto;
 }
 
 .nav {

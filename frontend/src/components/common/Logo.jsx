@@ -1,3 +1,9 @@
+import logo from "../../assets/logo.png";
+
 export default function Logo() {
-  return <a className="brand" href="/" aria-label="Narrate home"><span className="brand-mark">N</span><span>Narrate</span></a>;
+  return (
+    <a className="brand" href="/" aria-label="PollyBlog home">
+      <img className="brand-logo" src={logo} alt="PollyBlog" />
+    </a>
+  );
 }
