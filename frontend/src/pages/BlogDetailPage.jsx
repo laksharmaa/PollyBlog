@@ -40,10 +40,15 @@ export default function BlogDetailPage() {
 				</div>
 			</div>
 			<div className="article-layout">
-				<div className="article-body">
-					{content.split(/\n+/).filter(Boolean).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
-				</div>
-				<ListenPanel blog={blog} isAuthenticated={Boolean(localStorage.getItem("token"))} />
+				<div
+					className="article-body"
+					dangerouslySetInnerHTML={{
+						__html: blog.blogContent || "<p></p>",
+					}}
+				/>
+				<ListenPanel blog={blog}
+					isAuthenticated={Boolean(localStorage.getItem("token"))}
+				/>
 			</div>
 		</article>
 	);

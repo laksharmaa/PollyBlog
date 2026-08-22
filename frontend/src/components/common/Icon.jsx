@@ -10,6 +10,7 @@ export default function Icon({ name, size = 18 }) {
 		close: <><path d="m6 6 12 12M18 6 6 18" /></>,
 		back: <><path d="m15 18-6-6 6-6" /><path d="M9 12h11" /></>,
 		volume: <><path d="M5 10v4h3l4 4V6l-4 4z" /><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" /></>,
+		minus: <path d="M5 12h14" />,
 	};
 	return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
