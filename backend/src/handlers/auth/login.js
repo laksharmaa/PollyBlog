@@ -1,7 +1,11 @@
 const bcrypt = require('bcryptjs');
-const { GetCommand } = require('@aws-sdk/lib-dynamodb');
+const { GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 const { docClient } = require('../../shared/dynamo');
-const { generateToken } = require('../../shared/auth');
+const {
+  generateToken,
+  generateRefreshToken,
+  REFRESH_TOKEN_TTL_SECONDS,
+} = require('../../shared/auth');
 const { success, error } = require('../../shared/response');
 
 const TABLE = process.env.USERS_TABLE;
@@ -21,8 +25,21 @@ exports.handler = async (event) => {
       return error(401, 'Invalid username or password');
     }
 
-    const token = generateToken({ username: user.username });
-    return success(200, { token });
+    const accessToken = generateToken({ username: user.username });
+    const refresh = generateRefreshToken();
+    const expiresAt = Math.floor(Date.now() / 1000) + REFRESH_TOKEN_TTL_SECONDS;
+
+    await docClient.send(new PutCommand({
+      TableName: process.env.REFRESH_TOKENS_TABLE,
+      Item: {
+        tokenId: refresh.tokenId,
+        username: user.username,
+        expiresAt,
+        ttl: expiresAt,
+      },
+    }));
+
+    return success(200, { accessToken, token: accessToken, refreshToken: refresh.token });
   } catch (err) {
     console.error('login error:', err);
     return error(500, 'Could not log in user');
