@@ -1,173 +1,114 @@
-# PollyBlogs
+# PollyBlog
 
-PollyBlogs is a text-to-speech application that uses AWS Polly to generate voice narration for blog posts. Generated audio files are stored in an S3 bucket and the app avoids re-generating audio for identical text/voice combinations.
+PollyBlog is a React blog application with JWT authentication, public and private stories, and text-to-speech narration powered by Amazon Polly. Audio is stored in Amazon S3 and reused for identical text and voice requests.
 
-## Key features
+## Features
 
-- 🔊 Text-to-Speech Conversion: Converts blog text into audio using Amazon Polly voices (e.g. Joanna, Matthew, Ivy).
-- 📦 S3 Storage: Uploads and stores audio files in Amazon S3 and retrieves existing files to avoid duplication.
-- 🔐 Authentication: JWT-based authentication for user registration and protected APIs.
-- 📝 Save and Replay Blogs: Users can save blog entries and replay previously generated narration.
-- 🚀 Caching: Efficiently reuses existing audio when the same text + voice combination is requested.
+- Create, edit, publish, unpublish, and delete blog posts.
+- Browse public stories and manage your own library.
+- Convert blog text to speech with Amazon Polly voices.
+- Cache generated audio files in S3.
+- Protect account and writing actions with JWT authentication.
 
-## Tech stack
+## Stack
 
-- Frontend: React
-- Backend: AWS Lambda (Node.js) using the Serverless Framework
-- Cloud: Amazon Polly, S3, DynamoDB
-- Authentication: JWT
+- Frontend: React, Vite, React Router
+- Backend: AWS Lambda, Node.js 22, AWS SAM
+- Data and services: DynamoDB, S3, Amazon Polly
+- Authentication: JSON Web Tokens
 
-## Repository layout
+## Project layout
 
+```text
+frontend/        React application
+backend/         AWS SAM application
+  src/           Lambda handlers and shared modules
+  template.yaml  API, functions, tables, and bucket definition
+  samconfig.toml Deployment configuration
 ```
-frontend/
-backend/
-  ├─ authService/
-  ├─ blogService/
-  ├─ speechService/
-  ├─ layers/
-  └─ serverless.yml
-```
+
+## Architecture
+
+![PollyBlog architecture](Architectural-design.png)
 
 ## Prerequisites
 
-- Node.js v16 or newer
-- An AWS account with permissions to create/use Lambda, S3, DynamoDB, and Polly
-- Serverless Framework (install globally when deploying): `npm install -g serverless`
-- AWS CLI configured with credentials (or other method to provide credentials to Serverless)
+- Node.js 18 or newer
+- AWS CLI configured with credentials
+- AWS SAM CLI
+- An AWS account with permissions for Lambda, API Gateway, DynamoDB, S3, and Polly
 
-## Quickstart — local setup
+## Local setup
 
-1. Clone the repository
-
-```bash
-git clone https://github.com/laksharmaa/PollyBlog.git
-cd PollyBlog
-```
-
-2. Install dependencies
-
-- Frontend
+Install frontend dependencies and configure the deployed API URL:
 
 ```bash
 cd frontend
 npm install
-```
-
-- Backend services (from repo root)
-
-```bash
-cd backend/authService && npm install
-cd ../blogService && npm install
-cd ../speechService && npm install
-```
-
-3. Configure environment
-
-- Set the backend API base URL for the frontend. Create a `.env` in `frontend/`:
-
-```env
-VITE_API_BASE_URL=https://YOUR-API-GATEWAY-URL
-```
-
-- Update environment variables for Serverless in `serverless.yml` or via your CI/deployment system. Example:
-
-```yaml
-environment:
-  JWT_SECRET: 'your-secret-key'
-  S3_BUCKET_NAME: 'your-s3-bucket-name'
-```
-
-4. Create required AWS resources
-
-- S3 bucket to store generated audio files
-- DynamoDB tables (example names): `Users`, `SavedBlogs`
-- Ensure your IAM role(s) allow the Lambda functions to access S3, Polly and DynamoDB
-
-5. Deploy
-
-From the backend directory (or individual service directories) run:
-
-```bash
-serverless deploy
-```
-
-The deployment output will show API Gateway endpoints and deployed function ARNs.
-
-6. Run frontend locally
-
-```bash
-cd frontend
+printf 'VITE_API_BASE_URL=https://YOUR-API-ID.execute-api.REGION.amazonaws.com/prod\n' > .env
 npm run dev
 ```
 
-## API (verified contract)
+The frontend is available at `http://localhost:5173` by default.
 
-- POST /register
-- POST /login
-- GET /api/public-blogs
-- GET /api/public-blog/:blogId
-- POST /api/create-blog
-- GET /api/get-blogs
-- DELETE /api/delete-blog
-- POST /api/speech
+For backend development, install dependencies and start the SAM API locally:
 
-## Example IAM policy (replace placeholders before use)
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:PutObject",
-        "s3:GetObject",
-        "s3:GetObjectAttributes",
-        "s3:ListBucket"
-      ],
-      "Resource": [
-        "arn:aws:s3:::your-s3-bucket-name/*",
-        "arn:aws:s3:::your-s3-bucket-name"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "polly:SynthesizeSpeech"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "dynamodb:PutItem",
-        "dynamodb:GetItem",
-        "dynamodb:Query",
-        "dynamodb:Scan"
-      ],
-      "Resource": [
-        "arn:aws:dynamodb:REGION:ACCOUNT_ID:table/Users",
-        "arn:aws:dynamodb:REGION:ACCOUNT_ID:table/SavedBlogs"
-      ]
-    }
-  ]
-}
+```bash
+cd backend
+npm install
+npm run local
 ```
 
-## Notes & known issues
+The local API requires the AWS resources and environment values expected by the handlers. For normal development, point the frontend at the deployed API URL.
 
-- Ensure blog IDs (or any key used to generate object names) are generated deterministically to avoid duplicate uploads.
-- Make sure IAM roles have the exact permissions required by your functions (least privilege recommended).
+## Deploy the backend
+
+The SAM template creates the HTTP API, Lambda functions, DynamoDB tables, and S3 bucket. Set a strong `JwtSecret` during deployment and never commit secrets to the repository.
+
+```bash
+cd backend
+npm install
+npm run build
+npm run deploy:guided
+```
+
+For later deployments, use `npm run deploy`. The deployment output includes the API URL. Put that URL in `frontend/.env` as `VITE_API_BASE_URL`.
+
+## Frontend commands
+
+Run these from `frontend/`:
+
+```bash
+npm run dev       # start Vite development server
+npm run build     # create a production build
+npm run lint      # run ESLint
+npm run preview   # preview the production build
+```
+
+## API
+
+The deployed base URL is the value of the SAM `ApiUrl` output. Requests that modify or access a user's content require an `Authorization: Bearer <token>` header.
+
+| Method | Path | Auth |
+| --- | --- | --- |
+| POST | `/register` | No |
+| POST | `/login` | No |
+| GET | `/api/public-blogs` | No |
+| GET | `/api/public-blog/{blogId}` | No |
+| POST | `/api/create-blog` | Yes |
+| GET | `/api/my-blogs` | Yes |
+| PUT | `/api/blogs/{blogId}` | Yes |
+| DELETE | `/api/blogs/{blogId}` | Yes |
+| POST | `/api/speech` | Yes |
+
+Blog create and update requests use JSON with `blogTitle`, `blogContent`, and `isPublic` fields. `isPublic` may be sent as a boolean; the backend stores it as a string for DynamoDB indexing.
+
+## Security
+
+- Keep `JwtSecret` and AWS credentials out of source control.
+- Restrict CORS origins before using the application in production.
+- Grant Lambda only the IAM permissions required by each handler.
 
 ## Contributing
 
-Contributions, bug reports and feature requests are welcome. Please open an issue or submit a pull request.
-
-## License
-
-Specify a license file in the repository if you want to make this project open-source.
-
-## Maintainer
-
-_Lakshya Sharma_ – Developer and maintainer
+Open an issue or pull request with a clear description of the change and the validation performed.
