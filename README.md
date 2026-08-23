@@ -1,6 +1,6 @@
 # PollyBlog
 
-PollyBlog is a React blog application with JWT authentication, public and private stories, and text-to-speech narration powered by Amazon Polly. Audio is stored in Amazon S3 and reused for identical text and voice requests.
+PollyBlog is a serverless based blogging platform for sharing public and private stories, with text-to-speech narration powered by Amazon Polly. Audio is stored in Amazon S3 and reused for identical text and voice requests.
 
 ## Features
 
