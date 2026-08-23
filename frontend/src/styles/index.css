@@ -764,6 +764,36 @@ main {
   position: relative
 }
 
+.blog-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px 15px;
+  border-top: 1px solid var(--line)
+}
+
+.visibility-status {
+  margin-right: auto;
+  color: var(--muted);
+  font: 11px "DM Mono";
+  text-transform: uppercase;
+  letter-spacing: .08em
+}
+
+.text-button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 3px 0;
+  font-size: 13px
+}
+
+.text-button:hover,
+.text-button.danger:hover {
+  color: var(--accent-dark)
+}
+
 .delete-button {
   position: absolute;
   right: 16px;

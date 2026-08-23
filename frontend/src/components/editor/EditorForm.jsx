@@ -8,12 +8,14 @@ import {
     wordCount,
 } from "../../utils/text";
 
-export default function EditorForm() {
+export default function EditorForm({ initialBlog = null }) {
     const navigate = useNavigate();
 
-    const [title, setTitle] = useState("");
-    const [content, setContent] = useState("<p><br></p>");
-    const [publicPost, setPublicPost] = useState(true);
+    const [title, setTitle] = useState(initialBlog?.blogTitle || "");
+    const [content, setContent] = useState(initialBlog?.blogContent || "<p><br></p>");
+    const [publicPost, setPublicPost] = useState(
+        initialBlog ? initialBlog.isPublic === true || initialBlog.isPublic === "true" : true,
+    );
     const [status, setStatus] = useState("");
     const [saving, setSaving] = useState(false);
 
@@ -31,16 +33,16 @@ export default function EditorForm() {
         setStatus("");
 
         try {
-            await api.createBlog({
-                blogTitle: title.trim(),
-
-                // Store formatted HTML
-                blogContent: content,
-
-                isPublic: publicPost ? "true" : "false",
+            await api(initialBlog ? `/api/blogs/${initialBlog.blogId}` : "/api/create-blog", {
+                method: initialBlog ? "PUT" : "POST",
+                body: JSON.stringify({
+                    blogTitle: title.trim(),
+                    blogContent: content,
+                    isPublic: publicPost ? "true" : "false",
+                }),
             });
 
-            navigate(publicPost ? "/" : "/saved-blogs");
+            navigate(initialBlog ? "/saved-blogs" : publicPost ? "/" : "/saved-blogs");
         } catch (error) {
             setStatus(error.message);
         } finally {
@@ -92,7 +94,7 @@ export default function EditorForm() {
                         className="publish-button"
                         disabled={saving}
                     >
-                        {saving ? "Publishing…" : "Publish story"}
+                        {saving ? "Saving…" : initialBlog ? "Save changes" : "Publish story"}
                     </button>
                 </div>
             </div>
