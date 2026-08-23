@@ -41,7 +41,7 @@ Resources:
       StageName: !Ref Stage
       CorsConfiguration:
         AllowOrigins: ["*"]   # tighten to your frontend's domain before going to real prod
-        AllowMethods: [GET, POST, DELETE, OPTIONS]
+        AllowMethods: [GET, POST, PUT, DELETE, OPTIONS]
         AllowHeaders: [Content-Type, Authorization]
 
   # ---------------------------------------------------------------------
@@ -195,14 +195,58 @@ Resources:
       Handler: src/handlers/blog/delete.handler
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref SavedBlogsTable
+            TableName: !Ref BlogsTable
       Events:
         Api:
           Type: HttpApi
           Properties:
             ApiId: !Ref HttpApi
-            Path: /api/delete-blog
+            Path: /api/blogs/{blogId}
             Method: DELETE
+
+  ListOwnedBlogsFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/blog/listOwned.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/blog/listOwned.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref BlogsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/my-blogs
+            Method: GET
+
+  UpdateBlogFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/blog/update.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/blog/update.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BlogsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/blogs/{blogId}
+            Method: PUT
 
   ListPublicBlogsFunction:
     Type: AWS::Serverless::Function
