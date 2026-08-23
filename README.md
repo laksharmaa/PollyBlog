@@ -1,115 +1,120 @@
-> # **PollyBlogs: Text-to-Speech Blog Narration Application**
+# PollyBlogs
 
-> ## **Overview**
-> PollyBlogs is a powerful text-to-speech application that uses AWS Polly to generate voice narration for blog posts. It efficiently stores the generated audio files in an S3 bucket and checks for redundancy by determining whether an audio file already exists for a specific blog before generating it.
+PollyBlogs is a text-to-speech application that uses AWS Polly to generate voice narration for blog posts. Generated audio files are stored in an S3 bucket and the app avoids re-generating audio for identical text/voice combinations.
 
-> ## **Key features:**
-> - 🔊 Text-to-Speech Conversion: Converts blog text into audio using various Polly voices (Joanna, Matthew, Ivy, etc.).
-> - 📦 S3 Storage: Uploads and stores audio files in Amazon S3 and retrieves them without duplicating existing files.
-> - 🔐 Secure Access: Features JWT-based authentication to ensure user security for creating and accessing blogs.
-> - 📝 Save and Replay Blogs: Users can save blogs, retrieve previously saved content, and replay the generated audio.
-> - 🚀 Efficient Caching: Avoids regenerating audio if the same text with the same voice combination exists in S3.
+## Key features
 
-> ## **System Architecture:**
-![Architectural-design](https://github.com/user-attachments/assets/c5d3cd93-71ac-4010-8370-d08b0e70931c)
+- 🔊 Text-to-Speech Conversion: Converts blog text into audio using Amazon Polly voices (e.g. Joanna, Matthew, Ivy).
+- 📦 S3 Storage: Uploads and stores audio files in Amazon S3 and retrieves existing files to avoid duplication.
+- 🔐 Authentication: JWT-based authentication for user registration and protected APIs.
+- 📝 Save and Replay Blogs: Users can save blog entries and replay previously generated narration.
+- 🚀 Caching: Efficiently reuses existing audio when the same text + voice combination is requested.
 
-> ## **Tech Stack Used**
-> - **Frontend:** React.Js
-> - **Backend:** AWS Lambda (Node.js), Serverless Framework
-> - **Cloud Services:**
-> - Amazon Polly: Text-to-speech
-> - Amazon S3: File storage for audio files
-> - Amazon DynamoDB: Database for user data and saved blogs
-> - **Authentication:** JWT-based authentication
-> - **Deployment:** AWS Lambda and S3
+## Tech stack
 
-> ## **Project Structure**
-```
-|-- frontend/
-|-- backend/
- |-- authService/
- |-- blogService/
- |-- speechService/
- |-- layers/
- |-- serverless.yml
+- Frontend: React
+- Backend: AWS Lambda (Node.js) using the Serverless Framework
+- Cloud: Amazon Polly, S3, DynamoDB
+- Authentication: JWT
+
+## Repository layout
 
 ```
+frontend/
+backend/
+  ├─ authService/
+  ├─ blogService/
+  ├─ speechService/
+  ├─ layers/
+  └─ serverless.yml
+```
 
-> ## **Prerequisites**
-> - **AWS Account:** An active AWS account with IAM roles for S3, DynamoDB, Polly, and Lambda.
-> - **Node.js:** Ensure you have Node.js installed (version 16 or higher).
-> - **Serverless Framework:** Install globally using npm install -g serverless.
-> - **AWS CLI:** Configure AWS CLI for deployment.
+## Prerequisites
 
-> ## **Setup Instructions**
-> ### 1. Clone the Repository
-> First, clone the project repository to your local machine.  
+- Node.js v16 or newer
+- An AWS account with permissions to create/use Lambda, S3, DynamoDB, and Polly
+- Serverless Framework (install globally when deploying): `npm install -g serverless`
+- AWS CLI configured with credentials (or other method to provide credentials to Serverless)
+
+## Quickstart — local setup
+
+1. Clone the repository
+
+```bash
+git clone https://github.com/laksharmaa/PollyBlog.git
+cd PollyBlog
 ```
-git clone https://github.com/your-username/pollyblogs.git
-cd pollyblogs
-```
-> ### 2. Install Serverless Framework & Dependencies
-> Move into each service's directory and install the necessary dependencies:
-```
-npm install -g serverless //it will create serverless.yml file in your backend directory
-cd authService
-npm install
-```
-> * Repeat this for other services like blogService, speechService.
-> * Navigate to fontend directory:
-```
+
+2. Install dependencies
+
+- Frontend
+
+```bash
 cd frontend
 npm install
 ```
 
+- Backend services (from repo root)
 
-> ### 3. Setup AWS Services
-> - **S3 Bucket:** Create a bucket in S3 for storing audio files.
-> - **DynamoDB Tables:** Create two DynamoDB tables:
-> - Users for user data.
-> - SavedBlogs for storing saved blogs.
-> - Update the necessary permissions in your IAM role for S3, Polly, and DynamoDB.
-
-> ### 4. Modify Environment Variables
-> Update serverless.yml to set your environment variables like JWT_SECRET and S3_BUCKET_NAME.
-
-> yaml:
+```bash
+cd backend/authService && npm install
+cd ../blogService && npm install
+cd ../speechService && npm install
 ```
+
+3. Configure environment
+
+- Set the backend API base URL for the frontend. Create a `.env` in `frontend/`:
+
+```env
+VITE_API_BASE_URL=https://YOUR-API-GATEWAY-URL
+```
+
+- Update environment variables for Serverless in `serverless.yml` or via your CI/deployment system. Example:
+
+```yaml
 environment:
   JWT_SECRET: 'your-secret-key'
   S3_BUCKET_NAME: 'your-s3-bucket-name'
 ```
 
-### 5. Deploy to AWS
-> Use the Serverless Framework to deploy:
-`serverless deploy`
-> The terminal output should look like:
-```
-endpoints:
-  POST - https://jpokwv20g2.execute-api.ap-south-1.amazonaws.com/dev/register
-  POST - https://jpokwv20g2.execute-api.ap-south-1.amazonaws.com/dev/login
-  POST - https://jpokwv20g2.execute-api.ap-south-1.amazonaws.com/dev/api/save-blog
-  GET - https://jpokwv20g2.execute-api.ap-south-1.amazonaws.com/dev/api/get-blogs
-  GET - https://jpokwv20g2.execute-api.ap-south-1.amazonaws.com/dev/api/get-blog/{blogId}
-  DELETE - https://jpokwv20g2.execute-api.ap-south-1.amazonaws.com/dev/api/delete-blog
-  POST - https://jpokwv20g2.execute-api.ap-south-1.amazonaws.com/dev/api/speech
-functions:
-  authService: serverless-microservices-backend-dev-authService (18 kB)
-  blogService: serverless-microservices-backend-dev-blogService (18 kB)
-  speechService: serverless-microservices-backend-dev-speechService (18 kB)
-layers:
-  commonLibs: arn:aws:lambda:ap-south-1:905418375464:layer:commonLibs:18
+4. Create required AWS resources
+
+- S3 bucket to store generated audio files
+- DynamoDB tables (example names): `Users`, `SavedBlogs`
+- Ensure your IAM role(s) allow the Lambda functions to access S3, Polly and DynamoDB
+
+5. Deploy
+
+From the backend directory (or individual service directories) run:
+
+```bash
+serverless deploy
 ```
 
-### 6. Run the Frontend
-> To run the frontend locally:
-```
+The deployment output will show API Gateway endpoints and deployed function ARNs.
+
+6. Run frontend locally
+
+```bash
 cd frontend
 npm run dev
 ```
-# IAM Role Policy Example
-> Ensure your AWS IAM role has the following permissions:
-```
+
+## API (verified contract)
+
+- POST /register
+- POST /login
+- GET /api/public-blogs
+- GET /api/public-blog/:blogId
+- POST /api/create-blog
+- GET /api/get-blogs
+- DELETE /api/delete-blog
+- POST /api/speech
+
+## Example IAM policy (replace placeholders before use)
+
+```json
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -122,7 +127,8 @@ npm run dev
         "s3:ListBucket"
       ],
       "Resource": [
-        "arn:aws:s3:::bucket-/*"
+        "arn:aws:s3:::your-s3-bucket-name/*",
+        "arn:aws:s3:::your-s3-bucket-name"
       ]
     },
     {
@@ -130,28 +136,38 @@ npm run dev
       "Action": [
         "polly:SynthesizeSpeech"
       ],
-      "Resource": "your-frontend-url"
+      "Resource": "*"
     },
     {
       "Effect": "Allow",
       "Action": [
         "dynamodb:PutItem",
         "dynamodb:GetItem",
-        "dynamodb:Query"
+        "dynamodb:Query",
+        "dynamodb:Scan"
       ],
       "Resource": [
-        "arn:aws:dynamodb:ap-south-1:123456789012:table/user-table-name",
-        "arn:aws:dynamodb:ap-south-1:123456789012:table/blogs-table-name"
+        "arn:aws:dynamodb:REGION:ACCOUNT_ID:table/Users",
+        "arn:aws:dynamodb:REGION:ACCOUNT_ID:table/SavedBlogs"
       ]
     }
   ]
 }
-
 ```
 
-# **Known Issues**
-> Ensure that the unique blogId is generated consistently to prevent duplicate uploads in S3.
-> Ensure your IAM roles and permissions are properly set up to avoid access issues.
+## Notes & known issues
 
-# *Contributors*
-_Lakshya Sharma_ – _Developer and Maintainer_
+- Ensure blog IDs (or any key used to generate object names) are generated deterministically to avoid duplicate uploads.
+- Make sure IAM roles have the exact permissions required by your functions (least privilege recommended).
+
+## Contributing
+
+Contributions, bug reports and feature requests are welcome. Please open an issue or submit a pull request.
+
+## License
+
+Specify a license file in the repository if you want to make this project open-source.
+
+## Maintainer
+
+_Lakshya Sharma_ – Developer and maintainer
