@@ -454,16 +454,11 @@ main {
   padding: 80px 20px
 }
 
-.empty-mark {
+.empty-logo {
   margin: auto;
-  width: 48px;
-  height: 48px;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font: 16px "DM Mono";
-  color: var(--accent)
+  display: block;
+  width: 142px;
+  height: auto
 }
 
 .empty h3 {

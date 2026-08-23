@@ -29,6 +29,7 @@ Globals:
         USERS_TABLE: !Ref UsersTable
         BLOGS_TABLE: !Ref BlogsTable
         SAVED_BLOGS_TABLE: !Ref SavedBlogsTable
+        REFRESH_TOKENS_TABLE: !Ref RefreshTokensTable
         S3_BUCKET_NAME: !Ref AudioBucket
 
 Resources:
@@ -83,12 +84,46 @@ Resources:
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref UsersTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:DeleteItem
+              Resource: !GetAtt RefreshTokensTable.Arn
       Events:
         Api:
           Type: HttpApi
           Properties:
             ApiId: !Ref HttpApi
             Path: /login
+            Method: POST
+
+  RefreshFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/auth/refresh.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth/refresh.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:DeleteItem
+              Resource: !GetAtt RefreshTokensTable.Arn
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /refresh
             Method: POST
 
   # ---------------------------------------------------------------------
@@ -388,6 +423,21 @@ Resources:
         - AttributeName: blogId
           KeyType: RANGE
 
+  RefreshTokensTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-RefreshTokens"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: tokenId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: tokenId
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
   AudioBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -408,5 +458,7 @@ Outputs:
     Value: !Ref BlogsTable
   SavedBlogsTableName:
     Value: !Ref SavedBlogsTable
+  RefreshTokensTableName:
+    Value: !Ref RefreshTokensTable
   AudioBucketName:
     Value: !Ref AudioBucket

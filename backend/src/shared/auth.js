@@ -1,10 +1,23 @@
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-/** Signs a new token for the given payload (e.g. { username }). */
+const ACCESS_TOKEN_TTL = '15m';
+const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
+
+/** Signs a short-lived access token for the given payload. */
 function generateToken(payload) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_TTL });
+}
+
+function generateRefreshToken() {
+  const token = crypto.randomBytes(48).toString('base64url');
+  return { token, tokenId: hashRefreshToken(token) };
+}
+
+function hashRefreshToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
 }
 
 /**
@@ -27,9 +40,15 @@ function verifyRequest(event) {
     return jwt.verify(token, JWT_SECRET);
   } catch (e) {
     const err = new Error('Invalid or expired token');
-    err.statusCode = 400;
+    err.statusCode = 401;
     throw err;
   }
 }
 
-module.exports = { generateToken, verifyRequest };
+module.exports = {
+  generateToken,
+  generateRefreshToken,
+  hashRefreshToken,
+  REFRESH_TOKEN_TTL_SECONDS,
+  verifyRequest,
+};
