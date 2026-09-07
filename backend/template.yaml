@@ -16,6 +16,28 @@ Parameters:
       Secret used to sign/verify JWTs. Pass this at deploy time
       (see samconfig.toml / --parameter-overrides). Never commit the real
       value to git. Generate one with: openssl rand -base64 48
+  SmtpHost:
+    Type: String
+    Default: smtp.gmail.com
+  SmtpPort:
+    Type: String
+    Default: '587'
+  SmtpSecure:
+    Type: String
+    Default: 'false'
+  SmtpUser:
+    Type: String
+    Default: ''
+  SmtpPassword:
+    Type: String
+    NoEcho: true
+    Default: ''
+  EmailFrom:
+    Type: String
+    Default: ''
+  FrontendUrl:
+    Type: String
+    Default: 'http://localhost:5173'
 
 Globals:
   Function:
@@ -26,10 +48,18 @@ Globals:
     Environment:
       Variables:
         JWT_SECRET: !Ref JwtSecret
+        SMTP_HOST: !Ref SmtpHost
+        SMTP_PORT: !Ref SmtpPort
+        SMTP_SECURE: !Ref SmtpSecure
+        SMTP_USER: !Ref SmtpUser
+        SMTP_PASSWORD: !Ref SmtpPassword
+        EMAIL_FROM: !Ref EmailFrom
+        FRONTEND_URL: !Ref FrontendUrl
         USERS_TABLE: !Ref UsersTable
         BLOGS_TABLE: !Ref BlogsTable
         SAVED_BLOGS_TABLE: !Ref SavedBlogsTable
         REFRESH_TOKENS_TABLE: !Ref RefreshTokensTable
+        AUTH_ACTIONS_TABLE: !Ref AuthActionsTable
         S3_BUCKET_NAME: !Ref AudioBucket
 
 Resources:
@@ -62,6 +92,8 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AuthActionsTable
       Events:
         Api:
           Type: HttpApi
@@ -124,6 +156,126 @@ Resources:
           Properties:
             ApiId: !Ref HttpApi
             Path: /refresh
+            Method: POST
+
+  LogoutFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/auth/logout.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth/logout.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:DeleteItem
+              Resource: !GetAtt RefreshTokensTable.Arn
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /logout
+            Method: POST
+
+  VerifyEmailFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/auth/verifyEmail.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth/verifyEmail.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AuthActionsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /verify-email
+            Method: POST
+
+  ResendVerificationFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/auth/resendVerification.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth/resendVerification.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AuthActionsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /resend-verification
+            Method: POST
+
+  ForgotPasswordFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/auth/forgotPassword.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth/forgotPassword.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AuthActionsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /forgot-password
+            Method: POST
+
+  ResetPasswordFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        EntryPoints: [src/handlers/auth/resetPassword.js]
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth/resetPassword.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AuthActionsTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /reset-password
             Method: POST
 
   # ---------------------------------------------------------------------
@@ -368,9 +520,33 @@ Resources:
       AttributeDefinitions:
         - AttributeName: username
           AttributeType: S
+        - AttributeName: email
+          AttributeType: S
       KeySchema:
         - AttributeName: username
           KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: email-index
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  AuthActionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-AuthActions"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: tokenHash
+          AttributeType: S
+      KeySchema:
+        - AttributeName: tokenHash
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
 
   # Public/community blogs. PK+SK lets a user have many blogs; the two GSIs
   # support "all public blogs" and "look up one blog by id regardless of
