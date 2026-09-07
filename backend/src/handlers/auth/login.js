@@ -24,6 +24,9 @@ exports.handler = async (event) => {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return error(401, 'Invalid username or password');
     }
+    if (user.email && user.emailVerified === false) {
+      return error(403, 'Please verify your email before signing in');
+    }
 
     const accessToken = generateToken({ username: user.username });
     const refresh = generateRefreshToken();
