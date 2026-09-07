@@ -673,6 +673,13 @@ main {
   margin: 14px 0
 }
 
+.form-success {
+  color: #377454;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 14px 0
+}
+
 .auth-page {
   max-width: 1100px;
   margin: auto;
