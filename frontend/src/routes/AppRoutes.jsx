@@ -9,6 +9,10 @@ import CreateBlogPage from "../pages/CreateBlogPage";
 import SavedBlogsPage from "../pages/SavedBlogsPage";
 import EditBlogPage from "../pages/EditBlogPage";
 import TextToSpeechPage from "../pages/TextToSpeechPage";
+import ForgotPasswordPage from "../pages/ForgotPasswordPage";
+import ResetPasswordPage from "../pages/ResetPasswordPage";
+import VerifyEmailPage from "../pages/VerifyEmailPage";
+import ResendVerificationPage from "../pages/ResendVerificationPage";
 
 export default function AppRoutes(props) {
   return (
@@ -17,7 +21,11 @@ export default function AppRoutes(props) {
         <Route path="/" element={<HomePage />} />
         <Route path="/public-blog/:blogId" element={<BlogDetailPage />} />
         <Route path="/login" element={<LoginPage onLogin={props.onLogin} />} />
-        <Route path="/register" element={<RegisterPage onLogin={props.onLogin} />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/resend-verification" element={<ResendVerificationPage />} />
         <Route element={<ProtectedRoute isAuthenticated={props.isAuthenticated} />}>
           <Route path="/create-blog" element={<CreateBlogPage />} />
           <Route path="/saved-blogs" element={<SavedBlogsPage />} />

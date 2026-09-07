@@ -40,6 +40,11 @@ Verified API contract:
 
 - `POST /register`
 - `POST /login`
+- `POST /logout`
+- `POST /verify-email`
+- `POST /resend-verification`
+- `POST /forgot-password`
+- `POST /reset-password`
 - `GET /api/public-blogs`
 - `GET /api/public-blog/:blogId`
 - `POST /api/create-blog`
@@ -48,3 +53,7 @@ Verified API contract:
 - `POST /api/speech`
 
 Run with `npm install` then `npm run dev`.
+
+Email delivery is configured on the backend with SAM parameters: `SmtpHost`,
+`SmtpPort`, `SmtpSecure`, `SmtpUser`, `SmtpPassword`, `EmailFrom`, and
+`FrontendUrl`. For Gmail SMTP, use an app password for `SmtpPassword`.
