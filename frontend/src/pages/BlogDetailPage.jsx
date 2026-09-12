@@ -39,6 +39,11 @@ export default function BlogDetailPage() {
 					<span>{readingTime(content)} min read</span>
 				</div>
 			</div>
+			{blog.imageUrl && (
+				<div className="article-cover">
+					<img src={blog.imageUrl} alt={blog.blogTitle || "Story cover image"} />
+				</div>
+			)}
 			<div className="article-layout">
 				<div
 					className="article-body"
