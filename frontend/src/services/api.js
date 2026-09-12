@@ -11,7 +11,9 @@ export async function api(path, options = {}) {
   let data = null;
   try { data = await response.json(); } catch { data = null; }
 
-  if (response.status === 401 && retry && path !== "/refresh") {
+  const authRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/resend-verification"];
+
+  if (response.status === 401 && retry && path !== "/refresh" && !authRoutes.includes(path)) {
     const refreshToken = authStorage.getRefreshToken();
     if (refreshToken) {
       const refreshResponse = await fetch(`${API_BASE_URL}/refresh`, {
@@ -32,6 +34,10 @@ export async function api(path, options = {}) {
     window.location.assign(`/login?from=${encodeURIComponent(window.location.pathname)}`);
   }
 
-  if (!response.ok) throw new Error(data?.error || data?.message || "Something went wrong");
+  if (!response.ok) {
+    const errorMessage = data?.error || data?.message || "Something went wrong";
+    throw new Error(errorMessage);
+  }
+
   return data;
 }

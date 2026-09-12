@@ -34,8 +34,16 @@ export default function VerifyEmailPage() {
     }
   };
 
-  return <AuthPage eyebrow="Verify your email" title={message ? "You are all set." : "One last step."} subtitle="Check your inbox for a verification link from Narrate.">
+  const hasRegistrationEmail = Boolean(email) && !token;
+  const subtitle = message
+    ? "Your email address has been verified."
+    : hasRegistrationEmail
+      ? "Your account is almost ready."
+      : "Check your inbox for a verification link from Narrate.";
+
+  return <AuthPage eyebrow="Verify your email" title={message ? "You are all set." : hasRegistrationEmail ? "Check your email." : "One last step."} subtitle={subtitle}>
     {token && loading ? <p>Verifying your email…</p> : message ? <p className="form-success">{message} <a href="/login">Sign in</a></p> : <form className="auth-form" onSubmit={resend}>
+      {hasRegistrationEmail && <p className="form-success">We sent a verification link to <strong>{email}</strong> from <strong>virasakee.dev@gmail.com</strong>. Please check your spam folder too, just in case it was filtered there.</p>}
       <AuthField label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" />
       {error && <p className="form-error">{error}</p>}
       <button className="button primary full" disabled={loading}>{loading ? "Sending…" : "Resend verification"}</button>
