@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import EditorToolbar from "./EditorToolbar";
 
-export default function RichTextEditor({ value, onChange }) {
+export default function RichTextEditor({ value, onChange, onInsertImage, uploading = false }) {
   const editorRef = useRef(null);
 
   useEffect(() => {
@@ -46,6 +46,8 @@ export default function RichTextEditor({ value, onChange }) {
       <EditorToolbar
         editorRef={editorRef}
         onChange={update}
+        onInsertImage={onInsertImage}
+        uploading={uploading}
       />
 
       <div

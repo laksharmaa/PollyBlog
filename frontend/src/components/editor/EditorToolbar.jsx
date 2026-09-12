@@ -24,13 +24,19 @@ const tools = [
   },
 ];
 
-export default function EditorToolbar({ editorRef, onChange }) {
+export default function EditorToolbar({ editorRef, onChange, onInsertImage, uploading }) {
   const run = (action, value) => {
     editorRef.current?.focus();
 
     document.execCommand(action, false, value || null);
 
     onChange?.();
+  };
+
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // allow selecting the same file again later
+    if (file) onInsertImage?.(file);
   };
 
   const addLink = () => {
@@ -73,6 +79,21 @@ export default function EditorToolbar({ editorRef, onChange }) {
       <div className="toolbar-divider" />
 
       <div className="toolbar-group">
+        <label
+          className={`toolbar-image-trigger${uploading ? " is-uploading" : ""}`}
+          title="Add image"
+          aria-label="Add image"
+          onMouseDown={(event) => event.preventDefault()}
+        >
+          <Icon name="image" />
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={handleImageChange}
+            disabled={uploading}
+          />
+        </label>
+
         <button
           type="button"
           title="Add link"

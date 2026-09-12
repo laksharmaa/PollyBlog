@@ -376,6 +376,24 @@ main {
   flex-direction: column
 }
 
+.story-card-image {
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  border: 1px solid var(--line);
+  background: var(--soft)
+}
+
+.story-card-image img,
+.article-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block
+}
+
 .story-card:hover {
   background: var(--soft)
 }
@@ -512,6 +530,16 @@ main {
   font: 11px "DM Mono"
 }
 
+.article-cover {
+  max-width: 980px;
+  height: 420px;
+  margin: 0 auto 44px;
+  border: 1px solid var(--line);
+  background: var(--soft);
+  border-radius: 24px;
+  overflow: hidden
+}
+
 .article-layout {
   display: grid;
   grid-template-columns: minmax(0, 700px) 280px;
@@ -613,6 +641,80 @@ main {
 
 .editor {
   border-top: 1px solid var(--line)
+}
+
+.image-upload-panel {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 18px;
+  padding: 18px 18px 10px;
+  margin: 28px 0 25px
+}
+
+.image-upload-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 14px
+}
+
+.image-upload-header > span {
+  font: 10px "DM Mono";
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--muted)
+}
+
+.image-upload-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px
+}
+
+.button.secondary {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink)
+}
+
+.button.secondary:hover {
+  background: var(--soft)
+}
+
+.button.small {
+  padding: 8px 12px;
+  font-size: 12px
+}
+
+.upload-trigger {
+  position: relative;
+  overflow: hidden
+}
+
+.upload-trigger input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer
+}
+
+.image-preview {
+  width: 100%;
+  min-height: 220px;
+  max-height: 360px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--soft)
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  display: block
 }
 
 .title-input,
@@ -1118,6 +1220,45 @@ main {
   background: var(--line);
 }
 
+.toolbar-image-trigger {
+  position: relative;
+  overflow: hidden;
+
+  width: 34px;
+  height: 32px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 7px;
+
+  color: var(--ink);
+
+  cursor: pointer;
+}
+
+.toolbar-image-trigger:hover {
+  background: var(--paper-2);
+}
+
+.toolbar-image-trigger.is-uploading {
+  opacity: .5;
+  cursor: progress;
+}
+
+.toolbar-image-trigger input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.editor-image-error {
+  max-width: 700px;
+  margin: 0 auto 16px;
+  text-align: center;
+}
+
 /* Writing canvas */
 
 .rich-editor-content {
@@ -1187,6 +1328,38 @@ main {
   margin: 2.2em 0;
 }
 
+.editor-image,
+.article-body figure.editor-image {
+  margin: 1.6em 0;
+}
+
+.editor-image img,
+.article-body figure.editor-image img {
+  display: block;
+  width: 100%;
+  max-height: 640px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.editor-image figcaption,
+.article-body figure.editor-image figcaption {
+  margin-top: 10px;
+  text-align: center;
+  color: var(--muted);
+  font: 13px "DM Mono", monospace;
+}
+
+.editor-image figcaption:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.article-body figure.editor-image figcaption:empty {
+  display: none;
+}
+
 .rich-editor-content a,
 .article-body a {
   color: inherit;
@@ -1241,6 +1414,11 @@ main {
   border-top: 1px solid var(--line);
 
   margin: 2.5em 0;
+}
+
+.article-body img {
+  max-width: 100%;
+  border-radius: 12px;
 }
 
 /* Mobile */
