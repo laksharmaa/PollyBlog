@@ -46,9 +46,7 @@ export default function EditorForm({ initialBlog = null }) {
       assertSupportedImage(file);
       setEditorImageUploading(true);
       const dataUrl = await readFileAsDataUrl(file);
-      const imageMarkup = `<figure class="editor-image"><img src="${dataUrl}" alt="Inserted blog image" /><figcaption></figcaption></figure>`;
-      const nextContent = content + (content && content !== "<p><br></p>" ? "" : "");
-      setContent(`${nextContent}${imageMarkup}`);
+      return `<figure class="editor-image"><img src="${dataUrl}" alt="Inserted blog image" /><figcaption></figcaption></figure>`;
     } catch (error) {
       setStatus(error.message);
     } finally {
