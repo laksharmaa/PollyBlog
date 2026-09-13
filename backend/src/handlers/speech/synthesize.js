@@ -5,6 +5,47 @@ const { fileExistsInS3, uploadToS3, generateSignedUrl } = require('../../shared/
 const { success, error } = require('../../shared/response');
 
 const polly = new PollyClient({});
+const MAX_SYNCHRONOUS_TEXT_LENGTH = 3000;
+const CHUNK_LENGTH = 2800;
+
+function splitText(text, maxLength = CHUNK_LENGTH) {
+  const chunks = [];
+  let remaining = text.trim();
+
+  while (remaining.length > maxLength) {
+    const boundary = remaining.slice(0, maxLength + 1).search(/[.!?]["')\]]?\s[^\s]/g);
+    const whitespace = remaining.lastIndexOf(' ', maxLength);
+    const splitAt = boundary >= 0 ? boundary + 1 : whitespace;
+
+    if (splitAt <= 0) {
+      chunks.push(remaining.slice(0, maxLength));
+      remaining = remaining.slice(maxLength).trim();
+    } else {
+      chunks.push(remaining.slice(0, splitAt).trim());
+      remaining = remaining.slice(splitAt).trim();
+    }
+  }
+
+  if (remaining) chunks.push(remaining);
+  return chunks;
+}
+
+async function synthesizeChunk(text, voiceId) {
+  const hash = crypto.createHash('sha256').update(`${text}-${voiceId}`).digest('hex');
+  const s3Key = `audiofiles/${hash}-${voiceId}.mp3`;
+
+  if (!(await fileExistsInS3(s3Key))) {
+    const result = await polly.send(new SynthesizeSpeechCommand({
+      Text: text,
+      OutputFormat: 'mp3',
+      VoiceId: voiceId,
+    }));
+
+    await uploadToS3(s3Key, result.AudioStream);
+  }
+
+  return generateSignedUrl(s3Key);
+}
 
 exports.handler = async (event) => {
   try {
@@ -15,27 +56,19 @@ exports.handler = async (event) => {
       return error(400, 'Text and VoiceId are required');
     }
 
-    // Deterministic key so identical (text, voiceId) requests reuse the
-    // cached mp3 instead of re-calling Polly.
-    const hash = crypto.createHash('sha256').update(`${text}-${voiceId}`).digest('hex');
-    const s3Key = `audiofiles/${hash}-${voiceId}.mp3`;
+    const chunks = splitText(text);
+    const audioUrls = [];
 
-    if (await fileExistsInS3(s3Key)) {
-      return success(200, { audioUrl: await generateSignedUrl(s3Key) });
+    for (const chunk of chunks) {
+      audioUrls.push(await synthesizeChunk(chunk, voiceId));
     }
 
-    const result = await polly.send(new SynthesizeSpeechCommand({
-      Text: text,
-      OutputFormat: 'mp3',
-      VoiceId: voiceId,
-    }));
-
-    // result.AudioStream is a readable stream in Node.js runtimes.
-    await uploadToS3(s3Key, result.AudioStream);
-
-    return success(200, { audioUrl: await generateSignedUrl(s3Key) });
+    return success(200, { audioUrl: audioUrls[0], audioUrls });
   } catch (err) {
     if (err.statusCode) return error(err.statusCode, err.message);
+    if (err.name === 'TextLengthExceededException') {
+      return error(400, `Each narration section must be ${MAX_SYNCHRONOUS_TEXT_LENGTH} characters or fewer.`);
+    }
     console.error('speech error:', err);
     return error(500, 'Could not synthesize speech or save audio');
   }
