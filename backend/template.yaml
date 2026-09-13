@@ -42,7 +42,7 @@ Parameters:
 Globals:
   Function:
     Runtime: nodejs22.x
-    Architectures: [arm64]
+    Architectures: [x86_64]
     Timeout: 10
     MemorySize: 256
     Environment:
@@ -61,6 +61,7 @@ Globals:
         REFRESH_TOKENS_TABLE: !Ref RefreshTokensTable
         AUTH_ACTIONS_TABLE: !Ref AuthActionsTable
         S3_BUCKET_NAME: !Ref AudioBucket
+        BLOG_IMAGES_BUCKET: !Ref BlogImagesBucket
 
 Resources:
   # ---------------------------------------------------------------------
@@ -283,24 +284,36 @@ Resources:
   # ---------------------------------------------------------------------
   CreateBlogFunction:
     Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        EntryPoints: [src/handlers/blog/create.js]
     Properties:
       CodeUri: .
       Handler: src/handlers/blog/create.handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref BlogsTable
+        - S3CrudPolicy:
+            BucketName: !Ref BlogImagesBucket
       Events:
         Api:
           Type: HttpApi
           Properties:
             ApiId: !Ref HttpApi
             Path: /api/create-blog
+            Method: POST
+
+  UploadImageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/blog/uploadImage.handler
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref BlogImagesBucket
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/upload-image
             Method: POST
 
   SaveBlogFunction:
@@ -415,18 +428,14 @@ Resources:
 
   UpdateBlogFunction:
     Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        EntryPoints: [src/handlers/blog/update.js]
     Properties:
       CodeUri: .
       Handler: src/handlers/blog/update.handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref BlogsTable
+        - S3CrudPolicy:
+            BucketName: !Ref BlogImagesBucket
       Events:
         Api:
           Type: HttpApi
@@ -623,6 +632,41 @@ Resources:
           - Id: ExpireGeneratedAudio
             Status: Enabled
             ExpirationInDays: 30   # cached TTS mp3s regenerate cheaply; no need to keep forever
+
+  BlogImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-blog-images-${AWS::AccountId}"
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerPreferred
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireBlogImages
+            Status: Enabled
+            ExpirationInDays: 90
+
+  # Cover images and inline story images are rendered directly as <img>
+  # src URLs in published posts, so they need to be publicly readable.
+  # (Previously these URLs were short-lived S3 presigned URLs, which meant
+  # every image quietly stopped loading ~24h after upload.)
+  BlogImagesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref BlogImagesBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PublicReadBlogImages
+            Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: !Sub "${BlogImagesBucket.Arn}/*"
 
 Outputs:
   ApiUrl:

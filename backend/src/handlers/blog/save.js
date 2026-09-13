@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('node:crypto');
 const { PutCommand } = require('@aws-sdk/lib-dynamodb');
 const { docClient } = require('../../shared/dynamo');
 const { verifyRequest } = require('../../shared/auth');
@@ -15,7 +15,7 @@ exports.handler = async (event) => {
       return error(400, 'blogContent is required');
     }
 
-    const blogId = uuidv4();
+    const blogId = randomUUID();
     const item = {
       blogId,
       username: user.username,

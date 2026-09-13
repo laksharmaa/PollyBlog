@@ -12,6 +12,7 @@ exports.handler = async (event) => {
       TableName: TABLE,
       KeyConditionExpression: 'username = :username',
       ExpressionAttributeValues: { ':username': user.username },
+      ProjectionExpression: 'blogId, username, blogTitle, blogContent, isPublic, createdAt, imageUrl, imageKey',
     }));
 
     return success(200, result.Items || []);

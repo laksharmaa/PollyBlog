@@ -11,6 +11,7 @@ exports.handler = async () => {
       IndexName: 'isPublic-index',
       KeyConditionExpression: 'isPublic = :isPublic',
       ExpressionAttributeValues: { ':isPublic': 'true' },
+      ProjectionExpression: 'blogId, username, blogTitle, blogContent, isPublic, createdAt, imageUrl, imageKey',
     }));
 
     return success(200, result.Items);
