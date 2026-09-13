@@ -1,13 +1,40 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { generateToken, generateRefreshToken } = require('../src/shared/auth');
-const { createAction, consumeAction } = require('../src/shared/authActions');
-
 process.env.USERS_TABLE = 'test-users';
 process.env.REFRESH_TOKENS_TABLE = 'test-refresh';
 process.env.AUTH_ACTIONS_TABLE = 'test-auth-actions';
 process.env.JWT_SECRET = 'test-secret';
+
+const { docClient } = require('../src/shared/dynamo');
+const { generateToken, generateRefreshToken } = require('../src/shared/auth');
+const { createAction, saveAction, consumeAction } = require('../src/shared/authActions');
+
+const memoryTables = new Map();
+docClient.send = async (command) => {
+  const input = command?.input || {};
+  const tableName = input.TableName;
+  const table = memoryTables.get(tableName) || new Map();
+
+  if (command?.constructor?.name === 'PutCommand') {
+    table.set(input.Item.tokenHash || `${input.Item.type}:${input.Item.username}`, input.Item);
+    memoryTables.set(tableName, table);
+    return {};
+  }
+
+  if (command?.constructor?.name === 'GetCommand') {
+    const item = table.get(input.Key.tokenHash);
+    return { Item: item };
+  }
+
+  if (command?.constructor?.name === 'DeleteCommand') {
+    table.delete(input.Key.tokenHash);
+    memoryTables.set(tableName, table);
+    return {};
+  }
+
+  return {};
+};
 
 test('generateToken returns a valid JWT', () => {
   const token = generateToken({ username: 'alice' });
@@ -35,6 +62,7 @@ test('createAction produces a hashed token and ttl metadata', () => {
 test('consumeAction resolves only valid matching tokens', async () => {
   const action = createAction('password-reset', 'bob');
   const original = { ...action };
+  await saveAction(action);
 
   const same = await consumeAction(action.token, 'password-reset');
   assert.equal(same.username, 'bob');

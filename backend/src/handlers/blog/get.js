@@ -15,6 +15,7 @@ exports.handler = async (event) => {
     const result = await docClient.send(new GetCommand({
       TableName: TABLE,
       Key: { username: user.username, blogId },
+      ProjectionExpression: 'blogId, username, blogTitle, blogContent, isPublic, createdAt, imageUrl, imageKey',
     }));
 
     if (!result.Item) return error(404, 'Blog not found');

@@ -14,7 +14,7 @@ exports.handler = async (event) => {
       IndexName: 'blogId-index',
       KeyConditionExpression: 'blogId = :blogId',
       ExpressionAttributeValues: { ':blogId': blogId },
-      ProjectionExpression: 'blogId, username, blogTitle, blogContent, isPublic, createdAt',
+      ProjectionExpression: 'blogId, username, blogTitle, blogContent, isPublic, createdAt, imageUrl, imageKey',
     }));
 
     if (result.Items.length === 0 || result.Items[0].isPublic !== 'true') {
