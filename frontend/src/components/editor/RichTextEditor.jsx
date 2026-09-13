@@ -3,6 +3,7 @@ import EditorToolbar from "./EditorToolbar";
 
 export default function RichTextEditor({ value, onChange, onInsertImage, uploading = false }) {
   const editorRef = useRef(null);
+  const selectionRef = useRef(null);
 
   useEffect(() => {
     if (
@@ -15,6 +16,34 @@ export default function RichTextEditor({ value, onChange, onInsertImage, uploadi
 
   const update = () => {
     onChange(editorRef.current?.innerHTML || "");
+  };
+
+  const saveSelection = () => {
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+
+    if (!editor || !selection?.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    if (editor.contains(range.commonAncestorContainer)) {
+      selectionRef.current = range.cloneRange();
+    }
+  };
+
+  const handleInsertImage = async (file) => {
+    const imageMarkup = await onInsertImage?.(file);
+    const editor = editorRef.current;
+    const range = selectionRef.current;
+
+    if (!imageMarkup || !editor || !range || !editor.contains(range.commonAncestorContainer)) return;
+
+    range.deleteContents();
+    range.insertNode(range.createContextualFragment(imageMarkup));
+    range.collapse(false);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    update();
   };
 
   const handleKeyDown = (event) => {
@@ -46,7 +75,7 @@ export default function RichTextEditor({ value, onChange, onInsertImage, uploadi
       <EditorToolbar
         editorRef={editorRef}
         onChange={update}
-        onInsertImage={onInsertImage}
+        onInsertImage={handleInsertImage}
         uploading={uploading}
       />
 
@@ -60,6 +89,9 @@ export default function RichTextEditor({ value, onChange, onInsertImage, uploadi
         data-placeholder="Start writing…"
         onInput={update}
         onKeyDown={handleKeyDown}
+        onKeyUp={saveSelection}
+        onMouseUp={saveSelection}
+        onFocus={saveSelection}
       />
     </div>
   );
