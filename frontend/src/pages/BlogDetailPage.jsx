@@ -39,6 +39,9 @@ export default function BlogDetailPage() {
 					<span>{readingTime(content)} min read</span>
 				</div>
 			</div>
+			<ListenPanel blog={blog}
+				isAuthenticated={Boolean(localStorage.getItem("token"))}
+			/>
 			{blog.imageUrl && (
 				<div className="article-cover">
 					<img src={blog.imageUrl} alt={blog.blogTitle || "Story cover image"} />
@@ -50,9 +53,6 @@ export default function BlogDetailPage() {
 					dangerouslySetInnerHTML={{
 						__html: blog.blogContent || "<p></p>",
 					}}
-				/>
-				<ListenPanel blog={blog}
-					isAuthenticated={Boolean(localStorage.getItem("token"))}
 				/>
 			</div>
 		</article>
