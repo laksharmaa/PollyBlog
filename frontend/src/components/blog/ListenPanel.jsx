@@ -28,5 +28,29 @@ export default function ListenPanel({ blog, isAuthenticated }) {
 		}
 	};
 
-	return <aside className="listen-panel"><div className="listen-label"><Icon name="volume" /> Narrate this story</div><p>Let a synthetic voice read the words back to you.</p><select value={voice} onChange={(event) => setVoice(event.target.value)}><option>Matthew</option><option>Joanna</option><option>Kendra</option><option>Ivy</option></select><button className="button dark-button full" onClick={narrate} disabled={speaking}><Icon name={speaking ? "pause" : "play"} />{speaking ? "Generating…" : "Listen"}</button>{!isAuthenticated && <small>Sign in to use Narrate.</small>}{error && <p className="form-error">{error}</p>}{audioUrls.length > 0 && <audio controls autoPlay src={audioUrls[audioIndex]} onEnded={() => setAudioIndex((index) => Math.min(index + 1, audioUrls.length - 1))} />}</aside>;
+	return (
+		<aside className="listen-panel">
+			<div className="listen-label"><Icon name="volume" /> Audio</div>
+			<select value={voice} onChange={(event) => setVoice(event.target.value)}>
+				<option>Matthew</option>
+				<option>Joanna</option>
+				<option>Kendra</option>
+				<option>Ivy</option>
+			</select>
+			<button className="button dark-button small" onClick={narrate} disabled={speaking}>
+				<Icon name={speaking ? "pause" : "play"} />
+				{speaking ? "Generating…" : "Listen"}
+			</button>
+			{!isAuthenticated && <small>Sign in for audio.</small>}
+			{error && <p className="form-error">{error}</p>}
+			{audioUrls.length > 0 && (
+				<audio
+					controls
+					autoPlay
+					src={audioUrls[audioIndex]}
+					onEnded={() => setAudioIndex((index) => Math.min(index + 1, audioUrls.length - 1))}
+				/>
+			)}
+		</aside>
+	);
 }

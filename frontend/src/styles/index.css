@@ -541,10 +541,6 @@ main {
 }
 
 .article-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 700px) 280px;
-  gap: 80px;
-  align-items: start;
   max-width: 980px;
   margin: auto
 }
@@ -558,19 +554,27 @@ main {
 }
 
 .listen-panel {
-  position: sticky;
-  top: 105px;
+  max-width: 760px;
+  margin: 0 auto 28px;
+  padding: 10px 12px;
   border: 1px solid var(--line);
   background: var(--surface);
-  padding: 20px
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap
 }
 
 .listen-label {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 700;
-  font-size: 14px
+  font: 10px "DM Mono";
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted)
 }
 
 .listen-panel p {
@@ -581,25 +585,25 @@ main {
 
 .listen-panel select,
 .narrate-toolbar select {
-  width: 100%;
+  min-width: 130px;
   border: 1px solid var(--line);
   background: var(--bg);
   color: var(--ink);
-  padding: 11px;
-  border-radius: 7px;
-  margin: 5px 0 10px
+  padding: 8px 10px;
+  border-radius: 999px;
+  margin: 0
 }
 
 .listen-panel small {
   display: block;
   color: var(--muted);
   font-size: 11px;
-  margin-top: 10px
+  margin-top: 0
 }
 
 .listen-panel audio {
   width: 100%;
-  margin-top: 15px
+  margin-top: 12px
 }
 
 .article-skeleton {
@@ -1048,7 +1052,9 @@ main {
   }
 
   .listen-panel {
-    position: static
+    width: 100%;
+    border-radius: 18px;
+    padding: 12px 14px
   }
 
   .editor-footer {
