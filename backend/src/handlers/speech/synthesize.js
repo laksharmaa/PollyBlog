@@ -30,13 +30,41 @@ function splitText(text, maxLength = CHUNK_LENGTH) {
   return chunks;
 }
 
+function escapeSsml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function toSsml(text) {
+  const sentences = String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  if (!sentences.length) return '<speak></speak>';
+
+  const body = sentences
+    .map((sentence) => `<s>${escapeSsml(sentence)}</s><break time="250ms"/>`)
+    .join('');
+
+  return `<speak>${body}</speak>`;
+}
+
 async function synthesizeChunk(text, voiceId) {
   const hash = crypto.createHash('sha256').update(`${text}-${voiceId}`).digest('hex');
   const s3Key = `audiofiles/${hash}-${voiceId}.mp3`;
 
   if (!(await fileExistsInS3(s3Key))) {
+    const ssmlText = toSsml(text);
     const result = await polly.send(new SynthesizeSpeechCommand({
-      Text: text,
+      Text: ssmlText,
+      TextType: 'ssml',
       OutputFormat: 'mp3',
       VoiceId: voiceId,
     }));
